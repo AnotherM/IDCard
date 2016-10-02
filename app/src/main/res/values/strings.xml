@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">IDCard</string>
+    <string name="et_hint">Input the ID number</string>
+    <string name="info">Info query</string>
+    <string name="leak">Leak query</string>
+    <string name="loss">Loss query</string>
+
+</resources>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">IDCard</string>
+    <string name="et_hint">请输入身份证号</string>
+    <string name="info">信息查询</string>
+    <string name="loss">挂失查询</string>
+    <string name="leak">泄漏查询</string>
+</resources>
