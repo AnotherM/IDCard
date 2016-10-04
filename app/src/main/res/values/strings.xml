@@ -4,5 +4,10 @@
     <string name="info">Info query</string>
     <string name="leak">Leak query</string>
     <string name="loss">Loss query</string>
-
+    <string name="try_again">Error,please try again</string>
+    <string name="APP_KEY">2aeb5d90b1e18aa1e39e71e9f6d44dc5</string>
+    <string name="sex">Sex:</string>
+    <string name="status">Status:</string>
+    <string name="birthday">Birthday</string>
+    <string name="area">Area:</string>
 </resources>

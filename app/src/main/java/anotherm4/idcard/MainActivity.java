@@ -1,118 +1,173 @@
 package anotherm4.idcard;
 
 import android.os.Bundle;
-import android.os.StrictMode;
+import android.os.Handler;
+import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.BufferedReader;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Map;
 
-import anotherm4.idcard.Utils.HttpUtils;
-
+@SuppressWarnings("all")
 public class MainActivity extends AppCompatActivity {
-    public static final String DEF_CHATSET = "UTF-8";
-    public static final int DEF_CONN_TIMEOUT = 30000;
-    public static final int DEF_READ_TIMEOUT = 30000;
-    private static final String APPKEY = "2aeb5d90b1e18aa1e39e71e9f6d44dc5";
-    public static String userAgent = "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/29.0.1547.66 Safari/537.36";
-    public EditText etInput;
-    public TextView tvResult;
+
+    private static final String DEF_CHATSET = "UTF-8";
+    private EditText etInput;
+    private TextView tvResult;
+    private ProgressBar pgProcess;
+    private JSONObject object;
+    private String result;
+    private Handler handler = new Handler() {
+        public void handleMessage(Message msg) {
+            if (msg.what == 0) {
+                pgProcess.setVisibility(View.GONE);
+                try {
+                    if (object.getInt("error_code") == 0) {
+                        String status = String.valueOf(object.optJSONObject("result").optString("tips"));
+                        if (status != "") {
+                            tvResult.setText(getString(R.string.status) + status);
+                        } else {
+                            String area = String.valueOf(object.optJSONObject("result").optString("area"));
+                            String sex = String.valueOf(object.optJSONObject("result").optString("sex"));
+                            String birthday = String.valueOf(object.optJSONObject("result").optString("birthday"));
+
+                            tvResult.setText(getString(R.string.area) + area + "\n" + getString(R.string.sex) + sex + "\n" + getString(R.string.birthday) + birthday);
+                        }
+                    } else {
+                        tvResult.setText(String.valueOf(object.get("reason")));
+                    }
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                if (tvResult.getText().equals("")) {
+                    tvResult.setText(getString(R.string.try_again));
+                }
+            }
+        }
+    };
+    private String url;
+
+    public static String Utils(String strUrl, Map params, String method) throws IOException {
+        HttpURLConnection conn;
+        BufferedReader reader;
+        String rs;
+        StringBuilder sb = new StringBuilder();
+        if (method == null || method.equals("GET")) {
+            strUrl = strUrl + "?" + urlencode(params);
+        }
+        URL url = new URL(strUrl);
+        conn = (HttpURLConnection) url.openConnection();
+        if (method == null || method.equals("GET")) {
+            conn.setRequestMethod("GET");
+        } else {
+            conn.setRequestMethod("POST");
+            conn.setDoOutput(true);
+        }
+        conn.setUseCaches(false);
+        conn.setConnectTimeout(5000 * 3);
+        conn.setReadTimeout(5000 * 3);
+        conn.setInstanceFollowRedirects(false);
+        conn.connect();
+        if (params != null && (method != null && method.equals("POST"))) {
+            try {
+                DataOutputStream out = new DataOutputStream(conn.getOutputStream());
+                out.writeBytes(urlencode(params));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        InputStream is = conn.getInputStream();
+        reader = new BufferedReader(new InputStreamReader(is, DEF_CHATSET));
+        String strRead;
+        while ((strRead = reader.readLine()) != null) {
+            sb.append(strRead);
+        }
+        rs = sb.toString();
+        return rs;
+    }
+
+    private static String urlencode(Map<String, Object> data) {
+        StringBuilder sb = new StringBuilder();
+        for (Map.Entry<String, Object> i : data.entrySet()) {
+            try {
+                sb.append(i.getKey()).append("=").append(URLEncoder.encode(i.getValue() + "", DEF_CHATSET)).append("&");
+            } catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
+            }
+        }
+        return sb.toString();
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        if (android.os.Build.VERSION.SDK_INT > 9) {
-            StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
-            StrictMode.setThreadPolicy(policy);}
         etInput = (EditText) findViewById(R.id.et_input);
         tvResult = (TextView) findViewById(R.id.tv_result);
+        pgProcess = (ProgressBar) findViewById(R.id.pg_process);
     }
 
     public void btnInfo(View view) {
-        infoRequest();
+        pgProcess.setVisibility(View.VISIBLE);
+        url = "http://apis.juhe.cn/idcard/index";//请求接口地址
+        netThread();
     }
 
     public void btnLeak(View view) {
-        leakRequest();
+        pgProcess.setVisibility(View.VISIBLE);
+        url = "http://apis.juhe.cn/idcard/leak";//请求接口地址
+        netThread();
     }
 
     public void btnLoss(View view) {
-        leakRequest();
+        pgProcess.setVisibility(View.VISIBLE);
+        url = "http://apis.juhe.cn/idcard/loss";//请求接口地址
+        netThread();
     }
 
-
-    public void infoRequest() {
-        String result = null;
-        String url = "http://apis.juhe.cn/idcard/index";//请求接口地址
-        Map<String, String> params = new HashMap<String, String>();//请求参数
-        params.put("cardno", etInput.getText().toString());//身份证号码
-        params.put("dtype", "");//返回数据格式：json或xml,默认json
-        params.put("key", APPKEY);//你申请的key
-
-        try {
-            result = HttpUtils.Utils(url, params, "GET");
-            JSONObject object = new JSONObject(result);
-            if (object.getInt("error_code") == 0) {
-                Log.d("InfoError", String.valueOf(object.get("result")));
-                tvResult.setText(String.valueOf(object.get("result")));
-            } else {
-                Log.d("InfoError",object.get("error_code") + ":" + object.get("reason"));
-                tvResult.setText((String)object.get("reason"));
+    public void netThread() {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                Request();
+                Message msg = new Message();
+                msg.what = 0;
+                handler.sendMessage(msg);
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        }).start();
     }
 
-    public void leakRequest() {
-        String result = null;
-        String url = "http://apis.juhe.cn/idcard/leak";//请求接口地址
-        Map<String, String> params = new HashMap<String, String>();//请求参数
+    public void Request() {
+        Map<String, String> params = new HashMap<>();//请求参数
         params.put("cardno", etInput.getText().toString());//身份证号码
         params.put("dtype", "");//返回数据格式：json或xml,默认json
-        params.put("key", APPKEY);//你申请的key
+        params.put("key", getString(R.string.APP_KEY));//你申请的key
 
         try {
-            result = HttpUtils.Utils(url, params, "GET");
-            JSONObject object = new JSONObject(result);
+            result = Utils(url, params, "GET");
+            object = new JSONObject(result);
             if (object.getInt("error_code") == 0) {
-               Log.d("LeakError",String.valueOf(object.get("result")));
-                tvResult.setText(String.valueOf(object.get("result")));
+                Log.d("Success", String.valueOf(object.get("result")));
             } else {
-                Log.d("LeakError",object.get("error_code") + ":" + object.get("reason"));
-                tvResult.setText((String)object.get("reason"));
+                Log.d("Error", object.get("error_code") + ":" + object.get("reason"));
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void safeRequest() {
-        String result = null;
-        String url = "http://apis.juhe.cn/idcard/loss";//请求接口地址
-        Map<String, String> params = new HashMap<String, String>();//请求参数
-        params.put("cardno", etInput.getText().toString());//身份证号码
-        params.put("dtype", "");//返回数据格式：json或xml,默认json
-        params.put("key", APPKEY);//你申请的key
-
-        try {
-            result = HttpUtils.Utils(url, params, "GET");
-            JSONObject object = new JSONObject(result);
-            if (object.getInt("error_code") == 0) {
-                Log.d("LossError",String.valueOf(object.get("result")));
-                tvResult.setText(String.valueOf(object.get("result")));
-            } else {
-                Log.d("LossError",object.get("error_code") + ":" + object.get("reason"));
-                tvResult.setText((String)object.get("reason"));
-            }
-
         } catch (Exception e) {
             e.printStackTrace();
         }

@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/activity_main"
     android:layout_width="match_parent"
@@ -20,33 +19,36 @@
         android:hint="@string/et_hint"
         android:inputType="number"
         android:maxLength="18" />
-
     <Button
         android:id="@+id/btn_info"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/info"
-        android:onClick="btnInfo"/>
+        android:onClick="btnInfo"
+        android:text="@string/info" />
 
     <Button
-        android:id="@+id/btn_safe"
+        android:id="@+id/btn_leak"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/leak"
-        android:onClick="btnLeak"/>
+        android:onClick="btnLeak"
+        android:text="@string/leak" />
 
     <Button
         android:id="@+id/btn_loss"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/loss"
-        android:onClick="btnLoss"/>
+        android:onClick="btnLoss"
+        android:text="@string/loss" />
 
-
+    <ProgressBar
+        android:id="@+id/pg_process"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone" />
     <TextView
         android:id="@+id/tv_result"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
 
 
 </LinearLayout>
