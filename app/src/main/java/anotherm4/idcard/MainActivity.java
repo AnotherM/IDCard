@@ -10,6 +10,8 @@ import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import com.google.firebase.analytics.FirebaseAnalytics;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -29,6 +31,7 @@ import java.util.Map;
 public class MainActivity extends AppCompatActivity {
 
     private static final String DEF_CHATSET = "UTF-8";
+    private FirebaseAnalytics firebaseAnalytics;
     private EditText etInput;
     private TextView tvResult;
     private ProgressBar pgProcess;
@@ -119,9 +122,16 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        firebaseAnalytics = FirebaseAnalytics.getInstance(this);
         etInput = (EditText) findViewById(R.id.et_input);
         tvResult = (TextView) findViewById(R.id.tv_result);
         pgProcess = (ProgressBar) findViewById(R.id.pg_process);
+
+        Bundle bundle = new Bundle();
+        bundle.putString(FirebaseAnalytics.Param.ITEM_ID, "id");
+        bundle.putString(FirebaseAnalytics.Param.ITEM_NAME, "name");
+        bundle.putString(FirebaseAnalytics.Param.CONTENT_TYPE, "content");
+        firebaseAnalytics.logEvent(FirebaseAnalytics.Event.SELECT_CONTENT, bundle);
     }
 
     public void btnInfo(View view) {
